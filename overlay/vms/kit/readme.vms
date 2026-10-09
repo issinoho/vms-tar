@@ -1,0 +1,56 @@
+GNU tar for OpenVMS
+===================
+
+This is GNU tar @VERSION@ built natively for OpenVMS @ARCH@, from the
+unmodified release plus the patches in the vms-tar project:
+
+    https://github.com/issinoho/vms-tar
+
+Kit version: @KITVERSION@.  GNU tar is free software under the GNU General
+Public License, version 3 or later; see COPYING.  The manual page is
+TAR.1, also as plain text in TAR.TXT.
+
+What is installed
+-----------------
+    TAR$ROOT:[BIN]TAR.EXE
+    TAR$ROOT:[DOC]                    this file, COPYING, NEWS, the manual
+    TAR$ROOT:[000000]TAR$SETUP.COM    defines the tar command
+    SYS$STARTUP:TAR$STARTUP.COM       defines TAR$ROOT
+
+Setting up
+----------
+The kit installs TAR$STARTUP.COM into SYS$STARTUP and runs it once.  To
+define TAR$ROOT at every boot, the system manager adds this line to
+SYS$MANAGER:SYSTARTUP_VMS.COM:
+
+    $ @SYS$STARTUP:TAR$STARTUP.COM
+
+Each user (or SYLOGIN.COM, for everyone) then defines the command:
+
+    $ @TAR$ROOT:[000000]TAR$SETUP.COM
+
+Using it
+--------
+    $ tar "-cf" backup.tar [.dir]     ! create an archive
+    $ tar "-tvf" backup.tar           ! list it
+    $ tar "-xf" backup.tar            ! extract it
+
+Compressed archives (-z, -j, -J, --zstd) run the gzip, bzip2, xz and zstd
+commands from the vms-gzip, vms-bzip2, vms-xz and vms-zstd kits.
+
+Exit status
+-----------
+Under DCL a failed run exits with an error-severity status, so ON ERROR and
+IF .NOT. $STATUS work; the exit code N is ($STATUS .AND. %X7F8) / 8.  Exit
+code 1 (some files differ, or changed while being archived) has warning
+severity.  Under a GNV shell, $? is the exit code as on Unix.
+
+Upper-case options and batch jobs
+---------------------------------
+Under the TRADITIONAL DCL parse style DCL upper-cases the unquoted parts of
+a command and the C run-time library passes them to the program in lower
+case.  Batch jobs use TRADITIONAL even when interactive logins are set to
+EXTENDED.  Quote options with capitals (such as "-C" and "-T"), use the
+long forms, or start the procedure with
+
+    $ SET PROCESS/PARSE_STYLE=EXTENDED

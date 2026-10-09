@@ -1,0 +1,68 @@
+Subject: getprogname: add OpenVMS implementation
+
+Derive the program name from the running image's file name (JPI$_IMAGNAME).
+
+--- a/gnu/getprogname.c
++++ b/gnu/getprogname.c
+@@ -55,6 +55,14 @@
+ # include <string.h>
+ #endif
+ 
++#ifdef __VMS
++# include <ctype.h>
++# include <string.h>
++# include <descrip.h>
++# include <jpidef.h>
++# include <lib$routines.h>
++#endif
++
+ #include "basename-lgpl.h"
+ 
+ #ifndef HAVE_GETPROGNAME  /* not Mac OS X, FreeBSD, NetBSD, OpenBSD >= 5.4, Solaris >= 11, Cygwin, Android API level >= 21 */
+@@ -297,6 +305,46 @@
+       close (fd);
+     }
+   return "?";
++# elif defined __VMS                                       /* OpenVMS */
++  /* The running image's file name, e.g. "DKA0:[GNU.BIN]GREP.EXE;1",
++     reduced to its name in lower case: "grep".  */
++  static char *p;
++  if (!p)
++    {
++      static char name[256];
++      char image[256];
++      unsigned short len = 0;
++      int item = JPI$_IMAGNAME;
++      struct dsc$descriptor_s d;
++      d.dsc$w_length = sizeof image - 1;
++      d.dsc$b_dtype = DSC$K_DTYPE_T;
++      d.dsc$b_class = DSC$K_CLASS_S;
++      d.dsc$a_pointer = image;
++      if ((lib$getjpi (&item, 0, 0, 0, &d, &len) & 1) && len > 0)
++        {
++          char *s, *e;
++          size_t i;
++          image[len] = '\0';
++          s = strrchr (image, ']');
++          if (!s)
++            s = strrchr (image, '>');
++          if (!s)
++            s = strrchr (image, ':');
++          s = s ? s + 1 : image;
++          e = strchr (s, '.');
++          if (!e)
++            e = strchr (s, ';');
++          if (!e)
++            e = s + strlen (s);
++          for (i = 0; s + i < e && i < sizeof name - 1; i++)
++            name[i] = tolower ((unsigned char) s[i]);
++          name[i] = '\0';
++          p = name;
++        }
++      else
++        p = "?";
++    }
++  return p;
+ # else
+ #  error "getprogname module not ported to this OS"
+ # endif

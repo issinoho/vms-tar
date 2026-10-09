@@ -1,0 +1,22 @@
+Subject: config.h: let <assert.h> define assert again on OpenVMS
+
+For static_assert, gnulib's config.h includes <assert.h> and then
+#undefs assert, relying on the program's own later #include <assert.h> to
+define it again, as the C standard requires of <assert.h>.  VSI C's
+<assert.h> is guarded by __ASSERT_LOADED, so the second inclusion did
+nothing and every use of assert failed to compile.  Undefine the guard too.
+The text comes from gnulib's m4/assert_h.m4, where the same change
+belongs upstream.  (As in vms-wget.)
+
+--- a/config.h.in
++++ b/config.h.in
+@@ -3376,6 +3376,9 @@
+              && __GNUG__ < 6 && __clang_major__ < 6)))
+  #include <assert.h>
+  #undef/**/assert
++ #ifdef __VMS
++  #undef/**/__ASSERT_LOADED
++ #endif
+  #ifdef __sgi
+   #undef/**/__ASSERT_H__
+  #endif

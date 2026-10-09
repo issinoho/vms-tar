@@ -1,1 +1,5 @@
 0001-vms-no-fork-system.patch
+0002-getprogname-vms.patch
+0003-stdlib-vms-exit-severity.patch
+0004-config-h-assert-guard-vms.patch
+0005-stdio-fwrite-records-vms.patch

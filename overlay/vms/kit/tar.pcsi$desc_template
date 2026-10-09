@@ -1,0 +1,30 @@
+--
+-- PCSI product description for GNU tar on OpenVMS.
+-- Template: tools/prepare.sh substitutes @PRODUCER@, @BASE@ and @PCSIVERSION@.
+--
+product @PRODUCER@ @BASE@ TAR @PCSIVERSION@ full ;
+
+    information RELEASE_NOTES phase after ;
+
+    directory [TAR] ;
+    directory [TAR.BIN] ;
+    directory [TAR.DOC] ;
+
+    file [TAR.BIN]TAR.EXE ;
+    file [SYS$STARTUP]TAR$STARTUP.COM ;
+    file [TAR]TAR$SETUP.COM ;
+    file [TAR.DOC]README.VMS ;
+    file [TAR.DOC]COPYING. ;
+    file [TAR.DOC]NEWS. ;
+    file [TAR.DOC]TAR.TXT ;
+    file [TAR.DOC]TAR.1 ;
+
+    -- Define TAR$ROOT now and print the post-installation tasks (PCSI shows
+    -- only the title of an information message unless /HELP is given).
+    execute postinstall "@PCSI$DESTINATION:[SYS$STARTUP]TAR$STARTUP.COM INSTALL" interactive ;
+    -- On removal, deassign TAR$ROOT.
+    execute install "CONTINUE" remove "@PCSI$DESTINATION:[SYS$STARTUP]TAR$STARTUP.COM REMOVE" ;
+
+    information POST_INSTALL phase after ;
+
+end product ;

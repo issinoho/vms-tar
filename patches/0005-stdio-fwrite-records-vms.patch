@@ -1,0 +1,29 @@
+Subject: lib/stdio.in.h: on OpenVMS, route fwrite() through vms_fwrite()
+
+For record-oriented output (a terminal, a log file, a mailbox) the VSI C
+RTL writes each fwrite() item as a record of its own, so output written
+in pieces would appear one piece, or one character, per line.
+vms_fwrite() (vms/vms_fwrite.c) writes with putc(), which the C RTL
+assembles into records at newlines.  (grep does the same in vms-grep.)
+
+--- a/gnu/stdio.in.h
++++ b/gnu/stdio.in.h
+@@ -1793,6 +1793,18 @@
+                       "POSIX compliance");
+ #endif
+ 
++
++#if defined __VMS && !defined VMS_FWRITE_IMPLEMENTATION
++/* OpenVMS: for record-oriented output (a terminal, a log file, a mailbox)
++   the C RTL writes each fwrite() item as a record of its own, so a line
++   written in pieces appeared as one piece per line, or one character per
++   line.  vms_fwrite() (vms/vms_fwrite.c) writes with putc(), which the C
++   RTL assembles into records at newlines.  */
++# undef fwrite
++# define fwrite(ptr, size, n, stream) vms_fwrite (ptr, size, n, stream)
++extern size_t vms_fwrite (const void *, size_t, size_t, FILE *);
++#endif
++
+ #endif /* _@GUARD_PREFIX@_STDIO_H */
+ #endif /* _@GUARD_PREFIX@_STDIO_H */
+ #endif
