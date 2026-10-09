@@ -155,6 +155,7 @@ openat.c
 opendir-safer.c
 opendir.c
 opendirat.c
+parse-datetime.c
 pipe-safer.c
 printf-args.c
 printf-parse.c

@@ -98,6 +98,13 @@ for h in $libbuilt; do
     cp "$hostcfg/lib/$h" "$stage/lib/$h"
 done
 cp "$hostcfg/config.h" "$stage/config.h"   # AC_CONFIG_HEADERS([config.h])
+# Link tests that keep no cache variable run again here, on Linux.  One of
+# them finds glibc's program_invocation_name and program_invocation_short_name;
+# the VSI C run found neither (cache/vmscfg-*/config.log: "undefined symbol
+# program_invocation_name"), so gnulib must supply them.
+sed -i -e 's|^#define HAVE_PROGRAM_INVOCATION_NAME 1$|/* #undef HAVE_PROGRAM_INVOCATION_NAME */|' \
+       -e 's|^#define HAVE_PROGRAM_INVOCATION_SHORT_NAME 1$|/* #undef HAVE_PROGRAM_INVOCATION_SHORT_NAME */|' \
+    "$stage/config.h"
 # VSI C cannot #include a name with two dots: generated gnu/malloc/*.gl.h
 # become *_gl.h, and the gnulib headers that include them (scratch_buffer.h,
 # dynarray.h) are rewritten to use the new names.
@@ -110,12 +117,18 @@ for f in "$stage"/gnu/*.h "$stage"/gnu/*.c; do
     grep -q '<malloc/[a-z_-]*\.gl\.h>' "$f" || continue
     sed -i 's|<malloc/\([a-z_-]*\)\.gl\.h>|<malloc/\1_gl.h>|g' "$f"
 done
+# struct scratch_buffer aligns its buffer with a union member named __align,
+# a reserved word in VSI C (DEC C's alignment qualifier): "invalid
+# declarator".  The member is never used by name; rename it.
+sed -i 's/max_align_t __align;/max_align_t __gl_align;/' \
+    "$stage"/gnu/malloc/scratch_buffer_gl.h "$stage"/gnu/malloc/scratch_buffer.h
 
 # --- 5. MMS source lists ---------------------------------------------------
 # Objects for libgnu (gnulib): automake sources after conditionals, plus LIBOBJS.
 lib_srcs=$( { printvar gnu libgnu_a_SOURCES
               printvar gnu libgnu_a_LIBADD | tr ' ' '\n' | sed -n 's/^libgnu_a-//; s/\.o$/.c/p'
-            } | tr ' ' '\n' | grep '\.c$' | sort -u)
+            } | tr ' ' '\n' | sed 's/\.y$/.c/' | grep '\.c$' | sort -u)
+# (parse-datetime.y is listed as its bison source; the tarball ships the .c.)
 # Leave out what cannot work on VMS (overlay/vms/lib-exclude.txt, with reasons).
 while read -r pat; do
     case $pat in ''|'#'*) continue ;; esac
