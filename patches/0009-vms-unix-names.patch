@@ -1,0 +1,63 @@
+Subject: VMS-syntax file operands as Unix names (DECISIONS D2)
+
+"tar -cf x.tar [.in]" failed with "Cannot stat", and "in.dir" opened the
+directory file as a plain file ("Cannot savedir: not a directory").  Even
+if they had worked, the members would be named "[.in]/top.txt".  On VMS,
+pass every file operand (command line, -C, and -T lists) through
+vms_unix_name (vms/vms_names.c), which converts VMS syntax with the C
+RTL's decc$translate_vms and names a directory "in" rather than "in.dir".
+
+--- a/src/names.c
++++ b/src/names.c
+@@ -21,6 +21,14 @@
+ #include <hash.h>
+ #include <quotearg.h>
+ #include <wordsplit.h>
++
++#ifdef __VMS
++/* vms/vms_names.c: a file operand in VMS syntax ("[.in]", "in.dir") as
++   a Unix name; the argument itself when it needs no change.  */
++extern char *vms_unix_name (char const *name);
++#else
++# define vms_unix_name(name) ((char *) (name))
++#endif
+ #include <argp.h>
+ 
+ #include "common.h"
+@@ -806,7 +814,7 @@
+   struct name_elt *ep = name_elt_alloc ();
+ 
+   ep->type = NELT_NAME;
+-  ep->v.name = name;
++  ep->v.name = vms_unix_name (name);
+ 
+   switch (filename_args)
+     {
+@@ -838,7 +846,7 @@
+ {
+   struct name_elt *ep = name_elt_alloc ();
+   ep->type = NELT_CHDIR;
+-  ep->v.name = name;
++  ep->v.name = vms_unix_name (name);
+ }
+ 
+ static void
+@@ -1062,6 +1070,18 @@
+ 		}
+ 	    }
+ 	  chopslash (name_buffer);
++#ifdef __VMS
++	  {
++	    char *u = vms_unix_name (name_buffer);
++	    if (u != name_buffer)
++	      {
++		while (name_buffer_length <= strlen (u))
++		  name_buffer = x2realloc (name_buffer, &name_buffer_length);
++		strcpy (name_buffer, u);
++		free (u);
++	      }
++	  }
++#endif
+ 	  ret->type = NELT_NAME;
+ 	  ret->v.name = name_buffer;
+ 	  return 0;

@@ -5,3 +5,4 @@ vms/vms_fwrite.c
 vms/vms_spawn.c
 vms/vms_tarsys.c
 vms/vms_datasize.c
+vms/vms_names.c

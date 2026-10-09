@@ -47,4 +47,5 @@ One entry per build or run problem, newest last. Triage codes:
 | P | The fallback still failed with ENOENT | Registering the name calls `getcwd`; the PATH_MAX run test guessed "no", so gnulib's `getcwd` never called the C RTL's and walked `..` instead, which fails on VMS | `vms-manual.site`: `getcwd` is "partly working" and `getcwd (NULL, 0)` allocates (probed: it returns `/USER$ROOT/IAIN/X`) |
 | P | `HAVE_GETPAGESIZE` now comes from Linux | A new host-run check came with the getcwd answer | none: nothing in tar calls it, and both nodes link clean |
 | S | A failed run left DCL a success status | `main` returns instead of calling `exit()`, which patch 0003 routes through `vms_exit` | Patch 0008: on VMS `main` calls `exit()`; failures now give `%X1035A012` |
-| F | `[.in]` (Cannot stat) and `in.dir` (Cannot savedir) | VMS-syntax names for a directory | open: see DECISIONS D2 |
+| F | `[.in]` (Cannot stat) and `in.dir` (Cannot savedir) | VMS-syntax names for a directory | D2: `vms_names.c` + patch 0009 convert VMS-syntax operands (command line, `-T`, `-C`) to Unix names |
+| H | `%CC-E-NOTCOMPAT` on `rpl_mkdir` in `vms_names.c` | `<unixlib.h>` redeclares `mkdir` after gnulib replaced it | Declare `DECC$TRANSLATE_VMS` directly |
