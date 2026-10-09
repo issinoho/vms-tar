@@ -1282,7 +1282,7 @@
 /* #undef HAVE_GETOPT_LONG_ONLY */
 
 /* Define to 1 if the system has the 'getpagesize' function. */
-/* #undef HAVE_GETPAGESIZE */
+#define HAVE_GETPAGESIZE 1
 
 /* Define to 1 if you have the `getppriv' function. */
 /* #undef HAVE_GETPPRIV */
@@ -1436,7 +1436,7 @@
 
 /* Define to 1 if getcwd minimally works, that is, its result can be trusted
    when it succeeds. */
-/* #undef HAVE_MINIMALLY_WORKING_GETCWD */
+#define HAVE_MINIMALLY_WORKING_GETCWD 1
 
 /* Define to 1 if you have the <minix/config.h> header file. */
 /* #undef HAVE_MINIX_CONFIG_H */
@@ -1501,7 +1501,7 @@
 
 /* Define to 1 if getcwd works, except it sometimes fails when it shouldn't,
    setting errno to ERANGE, ENAMETOOLONG, or ENOENT. */
-/* #undef HAVE_PARTLY_WORKING_GETCWD */
+#define HAVE_PARTLY_WORKING_GETCWD 1
 
 /* Define to 1 if you have the `pathconf' function. */
 #define HAVE_PATHCONF 1

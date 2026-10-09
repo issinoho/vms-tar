@@ -36,3 +36,15 @@ One entry per build or run problem, newest last. Triage codes:
 | Code | Problem | Root cause | Fix |
 |------|---------|------------|-----|
 | S | zstd printed progress lines on every compressed create or extract | The compressor's SYS$ERROR is the user's terminal; zstd reports progress there | `vms_tarsys.c` passes `-q` to every compressor (all four take it) |
+
+## 2026-10-09: directories
+
+`tar -cvf x.tar in` and `in/` now archive the whole tree (files, subdirectories, an empty directory), and extraction rebuilds it, on both nodes with status success.
+
+| Code | Problem | Root cause | Fix |
+|------|---------|------------|-----|
+| L | `in: Cannot open: No such file or directory` for a directory | The C RTL cannot `open()` a directory by its Unix name (ENOENT; `stat()` works) | Patch 0008: gnulib's `open()` takes its directory fallback (`/dev/null` registered with the name, as on mingw) for ENOENT too; `openat.c` calls `rpl_open` on VMS, where there is no `openat()` |
+| P | The fallback still failed with ENOENT | Registering the name calls `getcwd`; the PATH_MAX run test guessed "no", so gnulib's `getcwd` never called the C RTL's and walked `..` instead, which fails on VMS | `vms-manual.site`: `getcwd` is "partly working" and `getcwd (NULL, 0)` allocates (probed: it returns `/USER$ROOT/IAIN/X`) |
+| P | `HAVE_GETPAGESIZE` now comes from Linux | A new host-run check came with the getcwd answer | none: nothing in tar calls it, and both nodes link clean |
+| S | A failed run left DCL a success status | `main` returns instead of calling `exit()`, which patch 0003 routes through `vms_exit` | Patch 0008: on VMS `main` calls `exit()`; failures now give `%X1035A012` |
+| F | `[.in]` (Cannot stat) and `in.dir` (Cannot savedir) | VMS-syntax names for a directory | open: see DECISIONS D2 |

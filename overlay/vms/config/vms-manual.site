@@ -40,3 +40,14 @@ gl_cv_func_strcasecmp_works=yes
 # answer would otherwise be inherited from Linux.
 am_cv_func_iconv=yes
 am_cv_func_iconv_works=yes
+
+# getcwd(): the CRTL's works (getcwd (NULL, 0) allocates; with
+# DECC$FILENAME_UNIX_REPORT, set by vms_crtl_init.c, it returns a Unix name
+# such as /USER$ROOT/IAIN/X).  The PATH_MAX test is a run test, so the cross
+# run guessed "no", and gnulib's getcwd then never called it; its fallback
+# walks ".." with opendir and fails with ENOENT on VMS.  That broke the
+# open() of a directory, which registers the directory's name (fchdir.c), so
+# tar could not archive a directory.  "partly working" makes gnulib try the
+# system getcwd first.  Probed 2026-10-09.
+gl_cv_func_getcwd_null=yes
+gl_cv_func_getcwd_path_max='no, but it is partly working'

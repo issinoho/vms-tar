@@ -1,0 +1,67 @@
+Subject: Directories on OpenVMS; failure status from main
+
+The VMS C RTL cannot open() a directory by its Unix name and reports
+ENOENT, so "tar -cf x.tar dir" said "dir: Cannot open: No such file or
+directory".  As in vms-grep, let gnulib's open() take its existing
+REPLACE_OPEN_DIRECTORY fallback (a dummy descriptor registered with the
+directory's name, as on mingw) for ENOENT too; fchdir and fdopendir then
+work from it.  tar opens everything through openat(), and gnulib's
+openat.c deliberately calls the system's open() (to avoid recursing into
+rpl_openat); VMS has no openat(), so there it calls rpl_open instead.
+
+tar's main() ends with "return exit_status", which bypasses the exit()
+that patch 0003 routes through vms_exit, so a failed run (status 2) left
+DCL a success-severity status.  On VMS, call exit() instead.
+
+--- a/gnu/open.c
++++ b/gnu/open.c
+@@ -154,7 +154,14 @@
+      on Linux (ie. always reports EOF on attempts to read()), and
+      override fstat() in fchdir.c to hide the fact that we have a
+      dummy.  */
+-  if (REPLACE_OPEN_DIRECTORY && fd < 0 && errno == EACCES
++  /* OpenVMS: open() of a directory by its Unix name ("dir", "dir/", ".")
++     fails with ENOENT, although stat() and opendir() succeed.  */
++# ifdef __VMS
++#  define OPEN_DIRECTORY_ERRNO(e) ((e) == EACCES || (e) == ENOENT)
++# else
++#  define OPEN_DIRECTORY_ERRNO(e) ((e) == EACCES)
++# endif
++  if (REPLACE_OPEN_DIRECTORY && fd < 0 && OPEN_DIRECTORY_ERRNO (errno)
+       && ((flags & O_ACCMODE) == O_RDONLY
+           || (O_SEARCH != O_RDONLY && (flags & O_ACCMODE) == O_SEARCH)))
+     {
+--- a/gnu/openat.c
++++ b/gnu/openat.c
+@@ -26,6 +26,15 @@
+ #include <fcntl.h>
+ #include <sys/types.h>
+ #undef __need_system_fcntl_h
++
++#if defined __VMS && !HAVE_OPENAT
++/* OpenVMS has no openat(), so this file's open() calls cannot recurse
++   into rpl_openat.  Use gnulib's rpl_open, which can open a directory
++   (open.c, above); the C RTL's open() fails with ENOENT for one.  */
++int rpl_open (char const *filename, int flags, ...);
++# undef open
++# define open rpl_open
++#endif
+ 
+ #if HAVE_OPENAT
+ static int
+--- a/src/tar.c
++++ b/src/tar.c
+@@ -2886,7 +2886,13 @@
+   else if (ferror (stderr) || fclose (stderr) != 0)
+     set_exit_status (TAREXIT_FAILURE);
+ 
++#ifdef __VMS
++  /* exit(), not return: <stdlib.h> (patch 0003) routes exit() through
++     vms_exit, which gives DCL an error status for a failed run.  */
++  exit (exit_status);
++#else
+   return exit_status;
++#endif
+ }
+ 
+ void
