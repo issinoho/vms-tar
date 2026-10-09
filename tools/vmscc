@@ -80,9 +80,11 @@ trap 'rm -rf "$tmp"' EXIT
   fi; } > "$tmp/$id.req"
 
 sftp_do() {
-    # Bounded: on a dead connection sftp can otherwise hang for hours.
+    # Bounded: on a dead connection sftp can otherwise hang for hours.  The key
+    # lets sftp connect directly when the shared connection is gone: the VMS
+    # sshd closes a multiplexed master when its first sftp session opens.
     printf '%s\n' "$@" | timeout 120 sftp -P "$PORT" -o "ControlPath=$VMSCC_CTL" \
-        -o BatchMode=yes -b - "$USER@$HOST" >/dev/null 2>&1
+        -i "${VMS_SSH_KEY:-$HOME/.ssh/vms_ed25519}" -o BatchMode=yes -b - "$USER@$HOST" >/dev/null 2>&1
 }
 
 memo=

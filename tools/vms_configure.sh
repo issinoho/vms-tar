@@ -41,7 +41,8 @@ ssh -i "${VMS_SSH_KEY:-$HOME/.ssh/vms_ed25519}" -o BatchMode=yes -p "$PORT" \
 cleanup() {
     local empty; empty=$(mktemp)
     printf 'cd %s/ccserv\nput %s CCSERVER.STOP\n' "$SFTPDIR" "$empty" |
-        sftp -P "$PORT" -o "ControlPath=$ctl" -b - "$USER@$HOST" >/dev/null 2>&1 || true
+        sftp -P "$PORT" -o "ControlPath=$ctl" -i "${VMS_SSH_KEY:-$HOME/.ssh/vms_ed25519}" \
+            -o BatchMode=yes -b - "$USER@$HOST" >/dev/null 2>&1 || true
     rm -f "$empty"
     ssh -o "ControlPath=$ctl" -O exit "$USER@$HOST" 2>/dev/null || true
 }
