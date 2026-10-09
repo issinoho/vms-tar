@@ -277,6 +277,7 @@ int
 sys_exec_command (char *file_name, int typechar, struct tar_stat_info *st)
 {
   FATAL_ERROR ((0, 0, _("--to-command is not supported on OpenVMS")));
+  return -1;                    /* not reached; VSI C cannot tell */
 }
 
 void
