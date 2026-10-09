@@ -4,6 +4,8 @@
 
 # vms-tar
 
+[![Downloads](https://img.shields.io/github/downloads/issinoho/vms-tar/total?label=downloads)](https://github.com/issinoho/vms-tar/releases)
+
 GNU tar 1.35 for OpenVMS (IA64 and x86-64), built natively with VSI C.
 
 The repository stores only our changes over the signed upstream release:
