@@ -49,3 +49,9 @@ One entry per build or run problem, newest last. Triage codes:
 | S | A failed run left DCL a success status | `main` returns instead of calling `exit()`, which patch 0003 routes through `vms_exit` | Patch 0008: on VMS `main` calls `exit()`; failures now give `%X1035A012` |
 | F | `[.in]` (Cannot stat) and `in.dir` (Cannot savedir) | VMS-syntax names for a directory | D2: `vms_names.c` + patch 0009 convert VMS-syntax operands (command line, `-T`, `-C`) to Unix names |
 | H | `%CC-E-NOTCOMPAT` on `rpl_mkdir` in `vms_names.c` | `<unixlib.h>` redeclares `mkdir` after gnulib replaced it | Declare `DECC$TRANSLATE_VMS` directly |
+
+## 2026-10-09: program name
+
+| Code | Problem | Root cause | Fix |
+|------|---------|------------|-----|
+| S | Messages began `/DKA800/USERS/IAIN/VMS_TAR/tar-1_35/BIN_IA64/TAR.EXE:`; `--help` said `Usage: TAR.EXE` | On VMS `argv[0]` is the image's full file name | Patch 0010: on VMS `main` replaces `argv[0]` with `getprogname ()` ("tar", patch 0002). Verified on both nodes: errors, `--usage`, a bad option |

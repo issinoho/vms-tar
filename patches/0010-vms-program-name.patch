@@ -1,0 +1,22 @@
+Subject: Program name "tar" on OpenVMS
+
+On VMS argv[0] is the image's full file name, so messages read
+"/DKA800/USERS/X/TAR.EXE: in: Cannot stat" and --help said "Usage:
+TAR.EXE".  On VMS, replace argv[0] with getprogname () (patch 0002:
+the image name in lower case) before set_program_name and argp see it.
+
+--- a/src/tar.c
++++ b/src/tar.c
+@@ -2754,6 +2754,12 @@
+ main (int argc, char **argv)
+ {
+   set_start_time ();
++#ifdef __VMS
++  /* argv[0] is the image's full name ("/DKA0/GNU/BIN/TAR.EXE"), which
++     would head every message and the usage line; getprogname (patch 0002)
++     gives "tar".  */
++  argv[0] = (char *) getprogname ();
++#endif
+   set_program_name (argv[0]);
+ #ifdef ENABLE_ERROR_PRINT_PROGNAME
+   error_print_progname = tar_print_progname;

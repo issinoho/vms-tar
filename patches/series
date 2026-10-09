@@ -7,3 +7,4 @@
 0007-vms-record-file-sizes.patch
 0008-vms-open-directory-and-exit.patch
 0009-vms-unix-names.patch
+0010-vms-program-name.patch
