@@ -30,3 +30,13 @@ ac_cv_type_struct_sched_param=yes
 # guess, "yes" for all but Solaris and Cygwin); VSI's C RTL compares bytes
 # with tolower() like any C library.
 gl_cv_func_strcasecmp_works=yes
+
+# iconv(): the VSI C RTL has it on both nodes, but conversions need tables in
+# SYS$I18N_ICONV (the VMSI18N kit).  Probed 2026-10-09: x86 converts
+# ISO8859-1 <-> UTF-8; IA64 has no usable tables; neither has ASCII -> UTF-8
+# (the default codeset).  tar copes: when iconv_open or a conversion fails,
+# pax names are written and read unchanged (src/xheader.c code_string and
+# decode_string).  configure cannot link-test this in the cross run, so the
+# answer would otherwise be inherited from Linux.
+am_cv_func_iconv=yes
+am_cv_func_iconv_works=yes
