@@ -13,7 +13,7 @@ an error-severity status under DCL and the POSIX status under a GNV shell.
  #endif
  
  
-+if defined __VMS && defined _POSIX_EXIT
++#if defined __VMS && defined _POSIX_EXIT
 +/* OpenVMS: the C RTL's POSIX exit() (selected by _POSIX_EXIT, which the GNV
 +   shells need for $?) turns every exit code into a status of *success*
 +   severity, so to DCL a failed run looks like a successful one.  vms_exit()

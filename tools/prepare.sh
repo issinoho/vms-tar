@@ -99,11 +99,16 @@ for h in $libbuilt; do
 done
 cp "$hostcfg/config.h" "$stage/config.h"   # AC_CONFIG_HEADERS([config.h])
 # VSI C cannot #include a name with two dots: generated gnu/malloc/*.gl.h
-# become *_gl.h (a patch includes them by that name on VMS).
+# become *_gl.h, and the gnulib headers that include them (scratch_buffer.h,
+# dynarray.h) are rewritten to use the new names.
 for f in "$stage"/gnu/malloc/*.gl.h; do
     [ -e "$f" ] || continue
     sed 's|<malloc/\([a-z_-]*\)\.gl\.h>|<malloc/\1_gl.h>|g' "$f" > "${f%.gl.h}_gl.h"
     rm "$f"
+done
+for f in "$stage"/gnu/*.h "$stage"/gnu/*.c; do
+    grep -q '<malloc/[a-z_-]*\.gl\.h>' "$f" || continue
+    sed -i 's|<malloc/\([a-z_-]*\)\.gl\.h>|<malloc/\1_gl.h>|g' "$f"
 done
 
 # --- 5. MMS source lists ---------------------------------------------------

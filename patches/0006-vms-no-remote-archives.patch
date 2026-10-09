@@ -1,0 +1,91 @@
+Subject: No remote archives on OpenVMS; leave the remaining fork() calls out
+
+tar takes an archive name with a colon before any slash for a remote one
+([user@]host:file) and runs rsh or ssh with fork() to reach /etc/rmt.  On
+OpenVMS every device-qualified file specification has such a colon
+(DKA0:[DIR]X.TAR), and there is no fork().  So on VMS lib/rmt.h never takes
+a name for a remote one, as if --force-local were always given; rmt_open__
+fails with ENOSYS (unreachable, kept as a safety net); and the
+remote-shell child's helper sys_reset_uid_gid (initgroups), and xfork(),
+whose only callers system.c leaves out on VMS (patch 0001), are not built.
+
+--- a/lib/rmt.h
++++ b/lib/rmt.h
+@@ -35,10 +35,18 @@
+    Distributed File System (DFS).  However, when --force-local, a
+    filename is never remote.  */
+ 
++#ifdef __VMS
++/* OpenVMS file specifications contain a colon (DKA0:[DIR]X.TAR,
++   DISK$USER:[ME]X.TAR), and there is no fork() to run a remote shell:
++   never take an archive name for a remote one, as if --force-local
++   were always given.  */
++# define _remdev(dev_name) ((void) (dev_name), false)
++#else
+ #define _remdev(dev_name) \
+   (!force_local_option && (rmt_dev_name__ = strchr (dev_name, ':')) \
+    && rmt_dev_name__ > (dev_name) \
+    && ! memchr (dev_name, '/', rmt_dev_name__ - (dev_name)))
++#endif
+ 
+ #define _isrmt(fd) \
+   ((fd) >= __REM_BIAS)
+--- a/lib/rtapelib.c
++++ b/lib/rtapelib.c
+@@ -358,6 +358,7 @@
+ 
+ /* Reset user and group IDs to be those of the real user.
+    Return NULL on success, a failing syscall name (setting errno) on error.  */
++#ifndef __VMS
+ static char const *
+ sys_reset_uid_gid (void)
+ {
+@@ -378,6 +379,7 @@
+ 
+   return NULL;
+ }
++#endif
+ 
+ /* Open a file (a magnetic tape device?) on the system specified in
+    FILE_NAME, as the given user. FILE_NAME has the form `[USER@]HOST:FILE'.
+@@ -388,6 +390,13 @@
+ rmt_open__ (const char *file_name, int open_mode, int bias,
+             const char *remote_shell)
+ {
++#ifdef __VMS
++  /* No fork() to run a remote shell on OpenVMS; remote archives are
++     not supported (lib/rmt.h never takes a name for a remote one).  */
++  (void) file_name, (void) open_mode, (void) bias, (void) remote_shell;
++  errno = ENOSYS;
++  return -1;
++#else
+   int remote_pipe_number;	/* pseudo, biased file descriptor */
+   char *file_name_copy;		/* copy of file_name string */
+   char *remote_host;		/* remote host name */
+@@ -585,6 +594,7 @@
+ 
+   free (file_name_copy);
+   return remote_pipe_number + bias;
++#endif
+ }
+ 
+ /* Close remote tape connection HANDLE and shut down.  Return 0 if
+--- a/src/misc.c
++++ b/src/misc.c
+@@ -1197,6 +1197,8 @@
+     diagfn (name);
+ }
+ 
++#ifndef __VMS
++/* OpenVMS has no fork(); its only callers (system.c) are left out there.  */
+ /* Fork, aborting if unsuccessful.  */
+ pid_t
+ xfork (void)
+@@ -1206,6 +1208,7 @@
+     call_arg_fatal ("fork", _("child process"));
+   return p;
+ }
++#endif
+ 
+ /* Create a pipe, aborting if unsuccessful.  */
+ void

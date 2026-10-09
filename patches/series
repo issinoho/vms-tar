@@ -3,3 +3,4 @@
 0003-stdlib-vms-exit-severity.patch
 0004-config-h-assert-guard-vms.patch
 0005-stdio-fwrite-records-vms.patch
+0006-vms-no-remote-archives.patch
