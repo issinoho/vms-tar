@@ -10,8 +10,9 @@ remote=$(echo "$UPSTREAM_NAME-$UPSTREAM_VERSION" | tr . _)
 REMOTE=$(echo "$remote" | tr a-z A-Z)
 read -r _ ARCH _ _ _ WORKDIR _ < <(awk -v n="$node" '$1==n' "$top/tools/nodes.conf")
 
-"$top/tools/build.sh" "$node" > "$top/out/build-$node.log" 2>&1 ||
-    { tail -20 "$top/out/build-$node.log"; echo "kit: build failed" >&2; exit 1; }
+# build.sh writes out/build-<node>.log itself; keep its console output apart.
+"$top/tools/build.sh" "$node" > "$top/out/kitbuild-$node.log" 2>&1 ||
+    { tail -20 "$top/out/kitbuild-$node.log"; echo "kit: build failed" >&2; exit 1; }
 
 job=$top/cache/kit-$node.com
 printf '$ set noon\n$ @%s.%s.VMS.KIT]MAKE_KIT.COM\n' "${WORKDIR%]}" "$REMOTE" > "$job"

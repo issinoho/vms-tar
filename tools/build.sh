@@ -22,7 +22,7 @@ cat > "$job" <<DCL
 DCL
 VMS_TIMEOUT=${VMS_BUILD_TIMEOUT:-5400} "$top/tools/vms.sh" "$node" run "$job" | tee "$top/out/build-$node.log"
 grep -q 'BUILD: done' "$top/out/build-$node.log"
-# A link with undefined symbols still writes WGET.EXE, which then fails at run
+# A link with undefined symbols still writes TAR.EXE, which then fails at run
 # time (%SYSTEM-F-CALLUNDEFSYM); and with KEEP_GOING, MMS carries on past
 # failed commands and still says "BUILD: done".  Treat all as failures.
 if grep -aE 'USEUNDEF|UNDFSYM|%DCL-[WEF]-|%MMS-[EF]-|%CC-[EF]-|%I?LINK-[EF]-' "$top/out/build-$node.log" >&2; then

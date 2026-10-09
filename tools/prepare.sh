@@ -153,7 +153,35 @@ GEN_MMS_LIB_BASE=gnu GEN_MMS_CONFIG_DIR= python3 "$top/tools/gen_mms.py" "$cfgdi
     "$hostcfg/src-sources.txt" "$hostcfg/extra-sources.txt" > "$stage/vms/sources.mms"
 
 if [ -d "$stage/vms/kit" ]; then
-step "PCSI kit inputs (to come)"
+step "PCSI kit inputs"
+: "${KIT_PRODUCER:=ISSINOHO}"
+# Two-part versions (1.35): the PCSI update is 0 and our VMS patch level the
+# ECO, so $UPSTREAM_VERSION-vms$VMS_PATCH_LEVEL is V<major>.<minor>-<update>E<level>.
+IFS=. read -r major minor update _ <<< "$UPSTREAM_VERSION"
+pcsiversion="V$major.$minor-${update:-0}E$VMS_PATCH_LEVEL"
+kitversion="$UPSTREAM_VERSION-vms$VMS_PATCH_LEVEL"
+kit=$stage/vms/kit
+subst() {
+    sed -e "s/@PRODUCER@/$KIT_PRODUCER/g" -e "s/@BASE@/$1/g" \
+        -e "s/@PCSIVERSION@/$pcsiversion/g" -e "s/@VERSION@/$UPSTREAM_VERSION/g" \
+        -e "s/@KITVERSION@/$kitversion/g" -e "s/@ARCH@/$2/g"
+}
+for base in I64VMS X86VMS; do
+    subst $base "" < "$kit/tar.pcsi\$desc_template" > "$kit/TAR-$base.PCSI\$DESC"
+    subst $base "" < "$kit/tar.pcsi\$text_template" > "$kit/TAR-$base.PCSI\$TEXT"
+done
+rm -f "$kit/tar.pcsi\$desc_template" "$kit/tar.pcsi\$text_template"
+mv "$kit/tar\$startup.com" "$kit/TAR\$STARTUP.COM"
+mv "$kit/tar\$setup.com" "$kit/TAR\$SETUP.COM"
+subst "" "IA64 and x86-64" < "$kit/readme.vms" > "$kit/README.VMS"; rm -f "$kit/readme.vms"
+mkdir -p "$kit/doc"
+cp "$stage/COPYING" "$kit/doc/COPYING."
+cp "$stage/NEWS" "$kit/doc/NEWS."
+cp "$stage/doc/tar.1" "$kit/doc/TAR.1"
+groff -man -Tascii -P-cbou "$stage/doc/tar.1" > "$kit/doc/TAR.TXT" 2>/dev/null
+[ -s "$kit/doc/TAR.TXT" ] || die "groff did not render doc/tar.1"
+printf 'KIT_PRODUCER=%s\nPCSI_VERSION=%s\nKIT_VERSION=%s\n' "$KIT_PRODUCER" "$pcsiversion" \
+    "$kitversion" > "$kit/kit.env"
 fi
 
 # --- snapshot: the resolved configuration, committed and reviewed ----------

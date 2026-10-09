@@ -54,7 +54,7 @@ def main():
             # take them by wildcard (the full list exceeds DCL's line limit).
             obj = '$(%s)%s.OBJ' % ('LOBJ' if macro == 'LIB' else 'OBJ', stem)
             objs.append(obj)
-            # "-": carry on past a warning status (wget and gnulib have benign
+            # "-": carry on past a warning status (tar and gnulib have benign
             # VSI C warnings); tools/build.sh fails the build on %CC-E/-F.
             # Every object also depends on config.h: MMS here tracks no header
             # dependencies, and a configuration change must rebuild everything.

@@ -1,6 +1,6 @@
 # gnulib sources left out of LIBGNU.OLB on OpenVMS (shell patterns, relative
 # to lib/), each with the reason.  tools/prepare.sh applies this list.
 #
-# posix_spawn emulation: needs fork(), which VMS lacks.  wget's only caller,
-# --use-askpass, is not available on VMS (patch 0007).
+# posix_spawn emulation: needs fork(), which VMS lacks.  tar runs its
+# subprocesses through vms/vms_tarsys.c instead.
 spawn*.c

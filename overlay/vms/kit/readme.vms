@@ -36,7 +36,34 @@ Using it
     $ tar "-xf" backup.tar            ! extract it
 
 Compressed archives (-z, -j, -J, --zstd) run the gzip, bzip2, xz and zstd
-commands from the vms-gzip, vms-bzip2, vms-xz and vms-zstd kits.
+commands from the vms-gzip, vms-bzip2, vms-xz and vms-zstd kits.  The
+archive passes through a temporary file in SYS$SCRATCH, so a compressed
+archive cannot be standard input or output.
+
+File names
+----------
+Files and directories can be named in either syntax.  tar converts VMS
+names to Unix names, so the archive's member names are the same either way
+and any tar can read them:
+
+    [.dir]  dir  dir.dir         -> member dir/ and everything below it
+    [.dir.sub]file.txt;1         -> member dir/sub/file.txt
+
+This holds for names on the command line, in -T lists, after -C, and for
+members to extract.  The archive name after -f may be in either syntax.
+
+Record files
+------------
+Text files with VMS record formats (variable-length, VFC, or with
+carriage control) are archived as their lines, each ending in a newline,
+with exact member sizes.  Extracted files are Stream_LF; a binary's
+original record format (for example fixed 512) is not restored, so set it
+again with SET FILE/ATTRIBUTES if the program that reads it needs it.
+
+Not available on OpenVMS
+------------------------
+Remote archives (host:file, through rsh), --to-command, --info-script and
+--checkpoint-action=exec.  A name with a colon is a local VMS device name.
 
 Exit status
 -----------

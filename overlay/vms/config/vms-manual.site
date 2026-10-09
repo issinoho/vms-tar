@@ -5,7 +5,7 @@
 # compiler-feature tests, and anything it got wrong.  Give a reason
 # for every entry.
 
-# x86 CRTL has pthread_sigmask, IA64 does not.  wget is built without threads,
+# x86 CRTL has pthread_sigmask, IA64 does not.  tar is built without threads,
 # so use sigprocmask on both for identical behaviour.
 ac_cv_func_pthread_sigmask=no
 

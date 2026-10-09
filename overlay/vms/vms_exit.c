@@ -13,7 +13,7 @@
    (status & %X7F8) / 8.
 
    Part of the OpenVMS port of GNU tar (github.com/issinoho/vms-tar), as in
-   vms-wget; distributed under the GNU General Public License, version 3 or
+   vms-gzip; distributed under the GNU General Public License, version 3 or
    later.  */
 
 #include <config.h>

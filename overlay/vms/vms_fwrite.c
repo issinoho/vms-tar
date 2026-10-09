@@ -1,10 +1,10 @@
 /* vms_fwrite.c - fwrite() through putc() on OpenVMS.
 
    For record-oriented output (a terminal, a log file, a mailbox) the VSI C
-   RTL writes each fwrite() item as a record of its own, so diff's lines,
-   written in pieces, appeared one piece (or one character) per line.
-   putc() output is assembled into records at newlines.  lib/stdio.h
-   (patch 0009) routes fwrite() here.  (As grep does in vms-grep.)
+   RTL writes each fwrite() item as a record of its own, so a line written
+   in pieces would appear one piece (or one character) per line.  putc()
+   output is assembled into records at newlines.  gnu/stdio.h (patch 0005)
+   routes fwrite() here.  (As grep does in vms-grep.)
 
    Part of the OpenVMS port of GNU tar
    (github.com/issinoho/vms-tar); distributed under the GNU General

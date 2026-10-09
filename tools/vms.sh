@@ -31,7 +31,7 @@ sftp_batch() {  # sftp_batch <commands...>
     return "${PIPESTATUS[1]}"
 }
 
-# DISK$USER:[USERNAME.VMS_GREP] + sub/dir -> DISK$USER:[USERNAME.VMS_GREP.SUB.DIR]
+# DISK$USER:[USERNAME.VMS_TAR] + sub/dir -> DISK$USER:[USERNAME.VMS_TAR.SUB.DIR]
 vms_dir() {
     local sub=${1:-}
     if [ -z "$sub" ]; then echo "$WORKDIR"; return; fi

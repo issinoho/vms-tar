@@ -1,4 +1,4 @@
-Subject: lib/stdio.in.h: on OpenVMS, route fwrite() through vms_fwrite()
+Subject: gnu/stdio.in.h: on OpenVMS, route fwrite() through vms_fwrite()
 
 For record-oriented output (a terminal, a log file, a mailbox) the VSI C
 RTL writes each fwrite() item as a record of its own, so output written
