@@ -70,11 +70,13 @@ MMS does not track compiler flags: after changing `ccflags.txt` or `CFLAGS` in
 - **Known porting work** (from the CRTL quirks met in vms-gzip and vms-grep):
   - tar runs compressors (`-z`, `-j`, `-J`, `--zstd`) and `--to-command` through `fork()`
     in `src/system.c`; VMS has no `fork()`;
-  - `lib/rtapelib.c` (remote archives over rsh) also forks; likely left out;
+  - `lib/rtapelib.c` (remote archives over rsh) also forks: patch 0006 makes no archive
+    name remote on VMS (`DKA0:[DIR]X.TAR` has a colon) and leaves the fork code out;
   - `open()` of a directory fails with ENOENT, and a directory named in VMS syntax lists
     VMS-form entries (`one^.txt;1`) - see vms-gzip patch 0004;
   - `st_size` of a variable-record file is not the byte count `read()` returns: tar
-    writes the header size before the data, so record files need a decision;
+    writes the header size before the data, so record files are counted
+    (docs/DECISIONS.md D1, `vms/vms_datasize.c`, patch 0007);
   - archives keep no RMS attributes: binaries extract as Stream_LF;
   - `>` on the command line is not redirected; use `PIPE`;
   - no `#include_next`; `mempcpy` is a macro; argument case under traditional parse style.

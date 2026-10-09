@@ -1,0 +1,62 @@
+Subject: Exact member sizes for OpenVMS record files
+
+tar writes a member's size into its header before the data.  For a VMS
+record file (variable-length, VFC, or with carriage control) st_size
+counts the record structure, not the bytes read() returns: a text file of
+79 bytes of lines had st_size 92, so tar archived 13 NULs after the text
+and warned that the file changed.  On VMS, take the size from
+vms_data_size() (vms/vms_datasize.c), which counts the bytes for such
+files, and compare the raw st_size in the "file changed as we read it"
+check, which fstats the file again.
+
+--- a/src/create.c
++++ b/src/create.c
+@@ -27,6 +27,11 @@
+ 
+ #include "common.h"
+ #include <hash.h>
++
++#ifdef __VMS
++/* vms/vms_datasize.c: the bytes read() returns, for record files.  */
++extern off_t vms_data_size (int fd, struct stat const *st);
++#endif
+ 
+ /* Error number to use when an impostor is discovered.
+    Pretend the impostor isn't there.  */
+@@ -1646,6 +1651,9 @@
+ static void
+ dump_file0 (struct tar_stat_info *st, char const *name, char const *p)
+ {
++#ifdef __VMS
++  off_t vms_raw_size = -1;    /* st_size before vms_data_size */
++#endif
+   union block *header;
+   char type;
+   off_t block_ordinal = -1;
+@@ -1682,6 +1690,14 @@
+ 	  st->fd = fd;
+ 	  if (fstat (fd, &st->stat) != 0)
+ 	    diag = stat_diag;
++#ifdef __VMS
++	  else
++	    {
++	      /* A record file's st_size is not what read() returns.  */
++	      vms_raw_size = st->stat.st_size;
++	      st->stat.st_size = vms_data_size (fd, &st->stat);
++	    }
++#endif
+ 	}
+     }
+   if (diag)
+@@ -1848,7 +1864,11 @@
+ 	     it shouldn't hurt to check for shrinkage again now;
+ 	     plus, the file may have grown.  */
+ 	  if (!is_dir)
++#ifdef __VMS
++	    ok &= (vms_raw_size < 0 ? st1.st_size : vms_raw_size) == st2.st_size;
++#else
+ 	    ok &= st1.st_size == st2.st_size;
++#endif
+ 
+ 	  if (!ok)
+ 	    {

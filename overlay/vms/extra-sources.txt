@@ -4,3 +4,4 @@ vms/vms_exit.c
 vms/vms_fwrite.c
 vms/vms_spawn.c
 vms/vms_tarsys.c
+vms/vms_datasize.c
