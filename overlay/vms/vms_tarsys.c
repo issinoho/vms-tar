@@ -243,11 +243,21 @@ sys_wait_for_child (pid_t child_pid, bool eof)
   if (vms_mode == VMS_COMPRESS)
     {
       char const *name = archive_name_array[0];
+      char *target = NULL;
       vms_mode = VMS_NONE;
       vms_run_zip (NULL, vms_plain);
       vms_plain[0] = '\0';      /* the compressor deleted it */
+      /* rename() takes the device and directory a new name lacks from the
+         old one, as $RENAME does, so "x.tar.gz" would land in SYS$SCRATCH
+         beside the temporary file: name the current directory.  */
+      if (!strpbrk (name, "/:]>"))
+        {
+          target = xmalloc (strlen (name) + 3);
+          strcpy (target, "[]");
+          strcat (target, name);
+        }
       /* Replace the archive, which may be on another device.  */
-      if (rename (vms_packed, name) != 0)
+      if (rename (vms_packed, target ? target : name) != 0)
         {
           if (!vms_copy (vms_packed, name))
             {
@@ -257,6 +267,7 @@ sys_wait_for_child (pid_t child_pid, bool eof)
             }
           vms_delete_all (vms_packed);
         }
+      free (target);
       vms_packed[0] = '\0';
     }
   else if (vms_mode == VMS_UNCOMPRESS)

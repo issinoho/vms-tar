@@ -55,3 +55,19 @@ One entry per build or run problem, newest last. Triage codes:
 | Code | Problem | Root cause | Fix |
 |------|---------|------------|-----|
 | S | Messages began `/DKA800/USERS/IAIN/VMS_TAR/tar-1_35/BIN_IA64/TAR.EXE:`; `--help` said `Usage: TAR.EXE` | On VMS `argv[0]` is the image's full file name | Patch 0010: on VMS `main` replaces `argv[0]` with `getprogname ()` ("tar", patch 0002). Verified on both nodes: errors, `--usage`, a bad option |
+
+## 2026-10-09: smoke test
+
+`[.VMS]TEST_SMOKE.COM` (run by `tools/test.sh`) passes 27 of 27 on both nodes. It covers:
+- `--version`, a missing archive, and a corrupt archive;
+- a tree created by its VMS, Unix and `.DIR` names, plus one file and `-C`;
+- extraction, with the records compared and the empty directory checked;
+- selecting one member by its VMS name;
+- a binary round trip, compared by checksum;
+- `-z` and `-J`, which are skipped without GZIP$ROOT or XZ$ROOT;
+- DCL error severity.
+
+| Code | Problem | Root cause | Fix |
+|------|---------|------------|-----|
+| L | A missing archive: "Cannot open: permission denied" | Patch 0008's directory fallback set EACCES when the name was not a directory, overwriting ENOENT | Patch 0008 keeps `open()`'s errno |
+| F | `tar -czf x.tar.gz ...` exited 0, but the archive was in SYS$LOGIN, not the current directory | `rename()` takes a missing device and directory from the old name (as `$RENAME` does), and the old name was the temporary file in SYS$SCRATCH. The earlier tests named a directory (`[-]`, `../`) | `vms_tarsys.c` renames to `[]name` when the name has no directory |

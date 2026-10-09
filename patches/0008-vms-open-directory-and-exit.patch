@@ -5,7 +5,9 @@ ENOENT, so "tar -cf x.tar dir" said "dir: Cannot open: No such file or
 directory".  As in vms-grep, let gnulib's open() take its existing
 REPLACE_OPEN_DIRECTORY fallback (a dummy descriptor registered with the
 directory's name, as on mingw) for ENOENT too; fchdir and fdopendir then
-work from it.  tar opens everything through openat(), and gnulib's
+work from it.  When the name is not a directory, the fallback keeps
+open()'s errno rather than setting EACCES, so a missing file still says
+"No such file or directory".  tar opens everything through openat(), and gnulib's
 openat.c deliberately calls the system's open() (to avoid recursing into
 rpl_openat); VMS has no openat(), so there it calls rpl_open instead.
 
@@ -15,7 +17,7 @@ DCL a success-severity status.  On VMS, call exit() instead.
 
 --- a/gnu/open.c
 +++ b/gnu/open.c
-@@ -154,7 +154,14 @@
+@@ -154,11 +154,19 @@
       on Linux (ie. always reports EOF on attempts to read()), and
       override fstat() in fchdir.c to hide the fact that we have a
       dummy.  */
@@ -31,6 +33,20 @@ DCL a success-severity status.  On VMS, call exit() instead.
        && ((flags & O_ACCMODE) == O_RDONLY
            || (O_SEARCH != O_RDONLY && (flags & O_ACCMODE) == O_SEARCH)))
      {
+       struct stat statbuf;
++      int open_errno = errno;
+       if (stat (filename, &statbuf) == 0 && S_ISDIR (statbuf.st_mode))
+         {
+           /* Maximum recursion depth of 1.  */
+@@ -167,7 +175,7 @@
+             fd = _gl_register_fd (fd, filename);
+         }
+       else
+-        errno = EACCES;
++        errno = open_errno;
+     }
+ #endif
+ 
 --- a/gnu/openat.c
 +++ b/gnu/openat.c
 @@ -26,6 +26,15 @@
