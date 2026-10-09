@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# vmscc - gcc-style compiler driver that compiles on a VMS node.
+#
+# Used as CC for the host-side configure run (tools/vms_configure.sh).  Each
+# invocation ships the source to vms_ccserver.com running on the node and
+# reports VSI C's verdict.  Nothing is ever run: configure is in cross mode.
+#
+# Environment (set by vms_configure.sh):
+#   VMSCC_NODE      node name in tools/nodes.conf
+#   VMSCC_SUBDIR    sftp subdirectory the server watches
+#   VMSCC_CTL       ssh ControlPath of an established master connection
+#   VMSCC_LOG       optional: append one line per call (mode, result)
+#   VMSCC_MEMO      optional: directory caching results by hash of (mode, source),
+#                   so re-running configure only sends tests it has not seen
+#   VMSCC_MAP       optional: ";"-separated "flag=VMS-spec" pairs translating
+#                   -I<dir> to an include directory and -l<lib> to an object
+#                   library, e.g. "-lpcre2-8=PCRE2$ROOT:[LIB]PCRE2-8.OLB"
+set -uo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+read -r _ _ HOST PORT USER _ SFTPDIR < <(awk -v n="$VMSCC_NODE" '$1==n' "$here/nodes.conf")
+
+mode=link out= srcs=() defs=() incs=() libs=()
+# map_flag <flag>: record a VMS include directory or library for a mapped flag.
+map_flag() {
+    local pair key val
+    IFS=';' read -r -a pairs <<< "${VMSCC_MAP:-}"
+    for pair in "${pairs[@]}"; do
+        key=${pair%%=*}; val=${pair#*=}
+        [ "$key" = "$1" ] || continue
+        case $1 in -I*) incs+=("$val") ;; -l*) libs+=("$val") ;; esac
+    done
+}
+while [ $# -gt 0 ]; do
+    case $1 in
+    --version|-v|-V|-qversion|--help)
+        echo "vmscc: VSI C on $VMSCC_NODE (remote)"; exit 0 ;;
+    -c) mode=compile ;;
+    -E) mode=preprocess ;;
+    -o) out=$2; shift ;;
+    -o*) out=${1#-o} ;;
+    -D) defs+=("$2"); shift ;;
+    -D*) defs+=("${1#-D}") ;;
+    -I|-L|-l) map_flag "$1$2"; shift ;;
+    -I*|-l*) map_flag "$1" ;;
+    -L*) ;;
+    -include|-isystem) shift ;;
+    *.c) srcs+=("$1") ;;
+    *.o|*.a) ;;          # objects/libraries on link lines: nothing to do remotely
+    -*) ;;               # gcc options (-g, -O2, -std=..., -W...) have no meaning here
+    esac
+    shift
+done
+
+if [ ${#srcs[@]} -ne 1 ]; then
+    echo "vmscc: expected exactly one .c file, got ${#srcs[@]}: ${srcs[*]:-}" >&2
+    exit 1
+fi
+src=${srcs[0]}
+
+id=V$$X$RANDOM
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+{
+    for d in "${defs[@]}"; do
+        case $d in
+        *=*) echo "#define ${d%%=*} ${d#*=}" ;;
+        *) echo "#define $d 1" ;;
+        esac
+    done
+    cat "$src"
+} > "$tmp/$id.c"
+# Request: mode; then, only if any flag was mapped, include directories and
+# object libraries (comma lists).  Unmapped requests stay one line, so results
+# memoised before VMSCC_MAP existed remain valid.
+{ echo "$mode"
+  if [ ${#incs[@]} -gt 0 ] || [ ${#libs[@]} -gt 0 ]; then
+      (IFS=,; echo "${incs[*]}")
+      (IFS=,; echo "${libs[*]}")
+  fi; } > "$tmp/$id.req"
+
+sftp_do() {
+    # Bounded: on a dead connection sftp can otherwise hang for hours.
+    printf '%s\n' "$@" | timeout 120 sftp -P "$PORT" -o "ControlPath=$VMSCC_CTL" \
+        -o BatchMode=yes -b - "$USER@$HOST" >/dev/null 2>&1
+}
+
+memo=
+if [ -n "${VMSCC_MEMO:-}" ]; then
+    mkdir -p "$VMSCC_MEMO"
+    memo=$VMSCC_MEMO/$(cat "$tmp/$id.req" "$tmp/$id.c" | sha256sum | cut -c1-40)
+fi
+
+if [ -n "$memo" ] && [ -f "$memo.res" ]; then
+    res=$(cat "$memo.res")
+    [ -f "$memo.log" ] && cp "$memo.log" "$tmp/log"
+    [ -f "$memo.i" ] && cp "$memo.i" "$tmp/out.i"
+    from=memo
+else
+from=vms
+remote=$SFTPDIR/$VMSCC_SUBDIR
+sftp_do "cd $remote" "put $tmp/$id.c $id.C" "put $tmp/$id.req $id.REQ" ||
+    { echo "vmscc: upload to $VMSCC_NODE failed" >&2
+      [ -n "${VMSCC_LOG:-}" ] && echo "$mode transport - $src" >> "$VMSCC_LOG"
+      exit 1; }
+
+res=
+for _ in $(seq 1 600); do
+    sleep 0.4
+    if sftp_do "cd $remote" "get $id.RES $tmp/res" "-get $id.LOG $tmp/log" \
+               "-get $id.I $tmp/out.i"; then
+        res=$(tr -d '\r' < "$tmp/res")
+        break
+    fi
+done
+sftp_do "cd $remote" "-rm $id.C" "-rm $id.RES" "-rm $id.LOG" "-rm $id.I" || true
+if [ -n "$memo" ] && { [ "$res" = ok ] || [ "$res" = fail ]; }; then
+    [ -f "$tmp/log" ] && cp "$tmp/log" "$memo.log"
+    [ -f "$tmp/out.i" ] && cp "$tmp/out.i" "$memo.i"
+    echo "$res" > "$memo.res"
+fi
+fi
+
+[ -f "$tmp/log" ] && tr -d '\r' < "$tmp/log" | grep -v '^$' >&2
+[ -n "${VMSCC_LOG:-}" ] && echo "$mode ${res:-timeout} $from $src" >> "$VMSCC_LOG"
+
+case $res in
+ok)
+    case $mode in
+    preprocess) tr -d '\r' < "$tmp/out.i" ;;
+    compile) echo "vmscc object" > "${out:-${src%.c}.o}" ;;
+    link) printf '#!/bin/sh\nexit 1\n' > "${out:-a.out}"; chmod +x "${out:-a.out}" ;;
+    esac
+    exit 0 ;;
+fail) exit 1 ;;
+*) echo "vmscc: no result from $VMSCC_NODE for $id" >&2; exit 1 ;;
+esac

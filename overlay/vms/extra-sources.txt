@@ -1,0 +1,6 @@
+# VMS-only sources compiled into TAR.EXE (paths relative to the tree root).
+vms/vms_crtl_init.c
+vms/vms_exit.c
+vms/vms_fwrite.c
+vms/vms_spawn.c
+vms/vms_tarsys.c

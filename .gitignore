@@ -1,0 +1,5 @@
+cache/
+staging/
+out/
+tools/nodes.conf
+out-cfg-*.log

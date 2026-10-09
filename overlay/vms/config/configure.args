@@ -1,0 +1,12 @@
+# Options for configure (one per line); both the VSI C run (vms_configure.sh)
+# and the host run in prepare.sh use them.
+# No message catalogues on VMS.
+--disable-nls
+# Single-threaded, as in the sibling ports (no gnulib thread layer).
+--disable-threads
+--disable-dependency-tracking
+# No libsigsegv on VMS.
+--without-libsigsegv
+# gnulib's regex, as in vms-grep and vms-sed.
+--with-included-regex
+--with-packager=vms-tar

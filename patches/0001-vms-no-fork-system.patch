@@ -1,0 +1,41 @@
+Subject: Leave tar's fork-based subprocess code out on OpenVMS
+
+OpenVMS has no fork(), so tar cannot run the compressor joined to it by
+pipes, nor run --to-command, --info-script or checkpoint scripts that way.
+On VMS these functions come from vms/vms_tarsys.c instead, which passes the
+archive through a temporary file and runs the compressor in a subprocess.
+
+--- a/src/system.c	2026-10-05 17:09:28.292645382 +0100
++++ b/src/system.c	2026-10-05 17:09:28.310146146 +0100
+@@ -199,6 +199,8 @@
+ 			 && archive_stat.st_dev == dev_null_stat.st_dev));
+ }
+ 
++#ifndef __VMS
++/* On OpenVMS (no fork) these are in vms/vms_tarsys.c.  */
+ void
+ sys_wait_for_child (pid_t child_pid, bool eof)
+ {
+@@ -251,6 +253,7 @@
+     }
+ }
+ 
++#endif /* !__VMS */
+ bool
+ sys_compare_uid (struct stat *a, struct stat *b)
+ {
+@@ -296,6 +299,8 @@
+   return rmtwrite (archive, record_start->buffer, record_size);
+ }
+ 
++#ifndef __VMS
++/* On OpenVMS (no fork) these are in vms/vms_tarsys.c.  */
+ #define	PREAD 0			/* read file descriptor from pipe() */
+ #define	PWRITE 1		/* write file descriptor from pipe() */
+ 
+@@ -916,4 +921,5 @@
+   xexec (script_name);
+ }
+ 
++#endif /* !__VMS */
+ #endif /* not MSDOS */
