@@ -24,3 +24,15 @@ One entry per build or run problem, newest last. Triage codes:
 | T | `parse_datetime` undefined | The automake list names `parse-datetime.y` | `prepare.sh` takes the shipped `.c` |
 | – | Warnings left | `%zu`/`%jd` in `rtapelib.c` (unreachable on VMS); INTOVERFL in gnulib's `ckd_sub` fallback (constant branch) | none needed |
 | F | A text file archived with NUL padding, "file changed as we read it" | Record files' `st_size` is not what `read()` returns | D1: `vms_datasize.c` + patch 0007 |
+
+## 2026-10-09: compressed archives
+
+`-z`, `-j`, `-J` and `--zstd` (GitHub's `vms_tarsys.c` and `vms_spawn.c`: a temporary file and the family's own gzip, bzip2, xz and zstd kits) work on both nodes:
+- create, list with automatic detection, and extract all exit with status success;
+- the records round-trip, and no `SYS$SCRATCH:TAR_*` files are left;
+- the archives read correctly with GNU tar on Linux, with the binary byte-identical;
+- names with two dots work: `rt^.tar.gz` (VMS syntax) and `../rt2.tar.gz` (Unix syntax).
+
+| Code | Problem | Root cause | Fix |
+|------|---------|------------|-----|
+| S | zstd printed progress lines on every compressed create or extract | The compressor's SYS$ERROR is the user's terminal; zstd reports progress there | `vms_tarsys.c` passes `-q` to every compressor (all four take it) |

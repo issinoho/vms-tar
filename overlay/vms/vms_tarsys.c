@@ -111,6 +111,9 @@ vms_run_zip (char const *option, char const *file)
   argv[n++] = vms_zip->name;
   if (option)
     argv[n++] = option;
+  /* Quiet: zstd otherwise reports its progress on SYS$ERROR, which is
+     the user's terminal.  gzip, bzip2 and xz take -q too.  */
+  argv[n++] = "-q";
   argv[n++] = "-f";
   for (i = 0; vms_args[i]; i++)
     argv[n++] = vms_args[i];
