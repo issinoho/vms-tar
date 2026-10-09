@@ -80,3 +80,17 @@ Every problem met and its fix is in [docs/PORTING_LOG.md](docs/PORTING_LOG.md).
 - Extracted files are Stream_LF. A binary's record format is not restored, so use `SET FILE/ATTRIBUTES`.
 - A compressed archive cannot be standard input or output.
 - Remote archives, `--to-command`, `--info-script` and `--checkpoint-action=exec` are not available.
+
+## Licence
+
+GNU tar is free software under the GNU General Public License, version 3 or later;
+see `COPYING`. Our patches and VMS files are distributed under the same terms.
+
+## Artwork
+
+`docs/images/banner.svg` and `docs/images/icon.svg` were made for this project in the style of
+classic DECwindows and VT terminals, like those of its sibling ports. They incorporate the
+[GNU head](https://www.gnu.org/graphics/heckert_gnu.html) by Aurelio A. Heckert, © 2003 Free
+Software Foundation, Inc., used under the Creative Commons Attribution-ShareAlike 2.0 licence.
+The two images are therefore also licensed under
+[CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/).
