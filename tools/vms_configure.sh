@@ -21,7 +21,7 @@ work=$top/cache/vmscfg-$name-$node
 
 read -r _ ARCH HOST PORT USER WORKDIR SFTPDIR < <(awk -v n="$node" '$1==n' "$top/tools/nodes.conf")
 [ -n "${HOST:-}" ] || { echo "unknown node $node" >&2; exit 2; }
-case $ARCH in IA64) triplet=ia64-hp-openvms ;; X86_64) triplet=x86_64-hp-openvms ;; *) exit 2 ;; esac
+case $ARCH in IA64) triplet=ia64-hp-openvms ;; X86_64) triplet=x86_64-hp-openvms ;; ALPHA|Alpha) triplet=alpha-dec-openvms ;; *) exit 2 ;; esac
 
 # One run per node.  The lock fd is inherited by configure and its children,
 # so a stray earlier run keeps holding it until every process has exited.

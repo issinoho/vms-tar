@@ -166,7 +166,7 @@ subst() {
         -e "s/@PCSIVERSION@/$pcsiversion/g" -e "s/@VERSION@/$UPSTREAM_VERSION/g" \
         -e "s/@KITVERSION@/$kitversion/g" -e "s/@ARCH@/$2/g"
 }
-for base in I64VMS X86VMS; do
+for base in I64VMS X86VMS AXPVMS; do
     subst $base "" < "$kit/tar.pcsi\$desc_template" > "$kit/TAR-$base.PCSI\$DESC"
     subst $base "" < "$kit/tar.pcsi\$text_template" > "$kit/TAR-$base.PCSI\$TEXT"
 done
